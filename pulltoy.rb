@@ -3,6 +3,12 @@
 # A totally ghetto method to sort out PRs. Works for now, totally
 # dependant on GitHub's HTML which could change at any moment.
 # This is a stopgap until I have something using Github's API proper.
+# Doesn't take arguments, just run:
+#
+# ruby pulltoy.rb | tee out.csv
+#
+# To get a current prioritizable list of what should be dealt with,
+# PR-wise
 
 require 'fileutils'
 require 'tempfile'
@@ -76,7 +82,7 @@ end
 
 @pr_numbers.sort!
 
-csv_title = %w{Pull, Changes, Author, URL, Title, Date}.to_csv
+csv_title = %w{Pull Changes Author Date Title URL}.to_csv
 puts csv_title
 @pr_numbers.each do |pr|
 	parse(pr)
@@ -85,8 +91,7 @@ puts csv_title
 	title = get_title(pr)
 	date = get_date(pr)
 	lines = get_line_count(pr)
-	this_pr = [pr,lines,author,url,title,date]
-	puts this_pr.inspect
+	this_pr = [pr,lines,author,date,title,url]
 	puts this_pr.to_csv
 	$stdout.flush
 end
