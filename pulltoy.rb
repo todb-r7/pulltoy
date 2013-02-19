@@ -29,10 +29,7 @@ def get_prs
 		url = "https://github.com/rapid7/metasploit-framework/pulls?direction=desc&page=#{i}&sort=created&state=open"
 		cmd = "curl -Lo- '#{url}' >> #{@temp_prs.path}"
 		system(cmd)
-		if i >=5
-			puts "Breaking!"
-			break
-		end
+		break if i >=5
 	end
 end
 
@@ -40,7 +37,9 @@ def parse(i)
 	url = "https://github.com/rapid7/metasploit-framework/pull/#{i}"
 	url_files = url << "/files"
 	@pr_pages[i] = Nokogiri::HTML(open(url))
+	sleep rand(4)+1
 	@pr_files[i] = Nokogiri::HTML(open(url_files))
+	sleep rand(4)+1
 end
 
 def get_author(i)
@@ -79,8 +78,6 @@ data.each_line do |line|
 	 pr = $1.to_i
 	 @pr_numbers << pr unless @pr_numbers.include? pr
 end
-
-@pr_numbers.sort!
 
 csv_title = %w{Pull Changes Author Date Title URL}.to_csv
 puts csv_title
