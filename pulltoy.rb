@@ -4,8 +4,11 @@
 
 require 'fileutils'
 require 'tempfile'
+require 'open-uri'
+require 'nokogiri'
 
-@prs = []
+@prs = {}
+@pr_numbers = []
 @temp_prs = Tempfile.new("pull-requests")
 
 def get_prs
@@ -21,18 +24,44 @@ def get_prs
 	end
 end
 
+def get_author(i)
+	url = "https://github.com/rapid7/metasploit-framework/pull/#{i}"
+	doc = Nokogiri::HTML(open(url))
+	doc.css('//p/a').each do |a|
+		if a.to_s.include? "pull-header-username"
+			return a.attributes["href"].value[1,0xffff]
+		end
+	end
+end
+
+def get_files(i)
+
+end
+
+def get_lines_of_change(i)
+
+end
+
+def get_date(i)
+
+end
+
 get_prs
 data = File.open(@temp_prs, "rb") {|f| f.read f.stat.size}
-@prs = []
+@pr_numbers = []
 
 data.each_line do |line|
 	next unless line =~ /metasploit-framework\/pull\/([0-9]+)/
 	 pr = $1.to_i
-	 @prs << pr unless @prs.include? pr
+	 @pr_numbers << pr unless @pr_numbers.include? pr
 end
 
-@prs.sort!
+@pr_numbers.sort!
 
-@prs.each do |pr|
-	puts "https://github.com/rapid7/metasploit-framework/pull/#{pr}"
+@pr_numbers.each do |pr|
+	author = get_author(pr)
+	url = "https://github.com/rapid7/metasploit-framework/pull/#{pr}"
+	puts [pr,author,url].inspect
 end
+
+
