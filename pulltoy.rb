@@ -6,9 +6,11 @@ require 'fileutils'
 require 'tempfile'
 require 'open-uri'
 require 'nokogiri'
+require 'time'
 
 @prs = {}
 @pr_numbers = []
+@docs = {}
 @temp_prs = Tempfile.new("pull-requests")
 
 def get_prs
@@ -17,16 +19,20 @@ def get_prs
 		url = "https://github.com/rapid7/metasploit-framework/pulls?direction=desc&page=#{i}&sort=created&state=open"
 		cmd = "curl -Lo- '#{url}' >> #{@temp_prs.path}"
 		system(cmd)
-		if i >=5
+		if i >=1
 			puts "Breaking!"
 			break
 		end
 	end
 end
 
-def get_author(i)
+def parse(i)
 	url = "https://github.com/rapid7/metasploit-framework/pull/#{i}"
-	doc = Nokogiri::HTML(open(url))
+	@docs[i] = Nokogiri::HTML(open(url))
+end
+
+def get_author(i)
+	doc = @docs[i]
 	doc.css('//p/a').each do |a|
 		if a.to_s.include? "pull-header-username"
 			return a.attributes["href"].value[1,0xffff]
@@ -34,16 +40,23 @@ def get_author(i)
 	end
 end
 
-def get_files(i)
+def get_title(i)
+	doc = @docs[i]
+	doc.css('h2').first.children.to_s
+end
+
+def get_file_count(i)
 
 end
 
-def get_lines_of_change(i)
+def get_commit_count(i)
 
 end
 
 def get_date(i)
-
+	doc = @docs[i]
+	date = Time.parse(doc.css('time').first.attributes['datetime'].value)
+	date.strftime("%Y-%m-%d")
 end
 
 get_prs
@@ -59,9 +72,12 @@ end
 @pr_numbers.sort!
 
 @pr_numbers.each do |pr|
+	parse(pr)
 	author = get_author(pr)
 	url = "https://github.com/rapid7/metasploit-framework/pull/#{pr}"
-	puts [pr,author,url].inspect
+	title = get_title(pr)
+	date = get_date(pr)
+	puts [pr,author,url,title,date].inspect
 end
 
 
