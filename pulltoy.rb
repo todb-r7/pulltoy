@@ -59,7 +59,7 @@ end
 def get_line_count(i)
 	doc = @pr_files[i]
 	changes = doc.css('span[@class = "diffstat tooltipped downwards"]').first['title']
-	add_del = changes.scan(/\d+/).map {|i| i.to_i}
+	add_del = changes.gsub(/,/,"").scan(/\d+/).map {|i| i.to_i}
 	add_del.inject {|sum, i| sum += i}
 end
 
@@ -69,19 +69,14 @@ def get_date(i)
 	date.strftime("%Y-%m-%d")
 end
 
-get_prs
-data = File.open(@temp_prs, "rb") {|f| f.read f.stat.size}
-@pr_numbers = []
-
-data.each_line do |line|
-	next unless line =~ /metasploit-framework\/pull\/([0-9]+)/
-	 pr = $1.to_i
-	 @pr_numbers << pr unless @pr_numbers.include? pr
+# For some reason, these PRs give trouble
+# 1217: Refactor of Java Meterpreter. It's really long, but MIRV is
+# longer (PR 1182) and doesn't hang forever.
+def skip_pr(i)
+	[1217].include? i
 end
 
-csv_title = %w{Pull Changes Author Date Title URL}.to_csv
-puts csv_title
-@pr_numbers.each do |pr|
+def build_csv_record(pr)
 	parse(pr)
 	author = get_author(pr)
 	url = "https://github.com/rapid7/metasploit-framework/pull/#{pr}"
@@ -89,6 +84,27 @@ puts csv_title
 	date = get_date(pr)
 	lines = get_line_count(pr)
 	this_pr = [pr,lines,author,date,title,url]
-	puts this_pr.to_csv
-	$stdout.flush
+	this_pr.to_csv
 end
+
+get_prs
+data = File.open(@temp_prs, "rb") {|f| f.read f.stat.size}
+@pr_numbers = []
+data.each_line do |line|
+	next unless line =~ /metasploit-framework\/pull\/([0-9]+)/
+	 pr = $1.to_i
+	 @pr_numbers << pr unless @pr_numbers.include? pr
+end
+
+# Because this is C suddenly.
+def main
+	csv_title = %w{Pull Changes Author Date Title URL}.to_csv
+	puts csv_title
+	@pr_numbers.each do |pr|
+		next if skip_pr(pr)
+		$stdout.puts build_csv_record(pr)
+		$stdout.flush
+	end
+end
+
+main()
