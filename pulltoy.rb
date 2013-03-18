@@ -114,15 +114,12 @@ def build_merge_command(pr)
 	if repo == "origin"
 	cmd << "git checkout -b #{branch} --track origin/#{branch}"
 	cmd << "git checkout master"
-	cmd << "git remaster"
-	cmd << "git merge #{branch}"
 	cmd << "git merge --no-commit --no-ff #{branch}"
 	else
 	cmd << "git remote-add-msf #{repo}"
 	cmd << "git fetch #{repo}"
 	cmd << "git checkout -b #{repo}-#{branch} --track #{repo}/#{branch}"
 	cmd << "git checkout master"
-	cmd << "git remaster"
 	cmd << "git merge --no-commit --no-ff #{repo}-#{branch}"
 	end
 	cmd << "git wipe"
