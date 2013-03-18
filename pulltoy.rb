@@ -9,6 +9,7 @@
 #
 # To get a current prioritizable list of what should be dealt with,
 # PR-wise
+#
 
 require 'fileutils'
 require 'tempfile'
@@ -93,6 +94,12 @@ def build_csv_record(pr)
 	this_pr.to_csv
 end
 
+# Note this uses some git aliases of my own. Specifically:
+#
+# [alias]
+# wipe = reset --hard HEAD
+# remote-add-msf = !"git remote add -f $1 git://github.com/$1/metasploit-framework.git"
+# You'll want to add those or these tricks won't work.
 def build_merge_command(pr)
 	parse(pr)
 	doc = @pr_files[pr]
@@ -153,4 +160,4 @@ end
 
 # Okay, go!
 # build_csv()
-merge_test
+build_merge_test_script
