@@ -63,6 +63,11 @@ def get_line_count(i)
 	add_del.inject {|sum, i| sum += i}
 end
 
+def get_file_count(i)
+	doc = @pr_files[i]
+	files = doc.css('span[@id = "files_tab_counter"]').inner_html.strip
+end
+
 def get_date(i)
 	doc = @pr_pages[i]
 	date = Time.parse(doc.css('time').first.attributes['datetime'].value)
@@ -82,9 +87,41 @@ def build_csv_record(pr)
 	url = "https://github.com/rapid7/metasploit-framework/pull/#{pr}"
 	title = get_title(pr)
 	date = get_date(pr)
+	files = get_file_count(pr)
 	lines = get_line_count(pr)
-	this_pr = [pr,lines,author,date,title,url]
+	this_pr = [pr,files,lines,author,date,title,url]
 	this_pr.to_csv
+end
+
+def build_merge_command(pr)
+	parse(pr)
+	doc = @pr_files[pr]
+	pull_desc = doc.css('div[@class="pull-description"]/p').text
+	source = pull_desc.split(/\s+/).last
+	if source.include? ":"
+		repo,branch = source.split(":")
+	else
+		repo,branch = ["origin",source]
+	end
+	cmd = []
+	if repo == "origin"
+	cmd << "git checkout -b #{branch} --track origin/#{branch}"
+	cmd << "git checkout master"
+	cmd << "git remaster"
+	cmd << "git merge #{branch}"
+	cmd << "git merge --no-commit --no-ff #{branch}"
+	else
+	cmd << "git remote-add-msf #{repo}"
+	cmd << "git fetch #{repo}"
+	cmd << "git checkout -b #{repo}-#{branch} --track #{repo}/#{branch}"
+	cmd << "git checkout master"
+	cmd << "git remaster"
+	cmd << "git merge --no-commit --no-ff #{repo}-#{branch}"
+	end
+	cmd << "git wipe"
+	cmd << "echo 'COMPLETED PR ##{pr} for #{repo}/#{branch}'"
+	cmd << "sleep 3"
+	cmd.join(";")
 end
 
 get_prs
@@ -96,9 +133,8 @@ data.each_line do |line|
 	 @pr_numbers << pr unless @pr_numbers.include? pr
 end
 
-# Because this is C suddenly.
-def main
-	csv_title = %w{Pull Changes Author Date Title URL}.to_csv
+def build_csv
+	csv_title = %w{Pull Files Lines Author Date Title URL}.to_csv
 	puts csv_title
 	@pr_numbers.each do |pr|
 		next if skip_pr(pr)
@@ -107,4 +143,14 @@ def main
 	end
 end
 
-main()
+def build_merge_test_script
+	@pr_numbers.each do |pr|
+		next if skip_pr(pr)
+		$stdout.puts build_merge_command(pr)
+		$stdout.flush
+	end
+end
+
+# Okay, go!
+# build_csv()
+merge_test
