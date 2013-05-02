@@ -24,9 +24,9 @@ require 'csv'
 @pr_files = {}
 @temp_prs = Tempfile.new("pull-requests")
 
-def get_prs
+def get_prs(limit=10)
 	File.unlink @temp_prs.path rescue nil
-	1.upto(10) do |i|
+	1.upto(limit) do |i|
 		url = "https://github.com/rapid7/metasploit-framework/pulls?direction=desc&page=#{i}&sort=created&state=open"
 		cmd = "curl -Lo- '#{url}' >> #{@temp_prs.path}"
 		system(cmd)
@@ -122,7 +122,7 @@ def build_merge_command(pr)
 	cmd.join(";")
 end
 
-get_prs
+get_prs(10)
 data = File.open(@temp_prs, "rb") {|f| f.read f.stat.size}
 @pr_numbers = []
 data.each_line do |line|
