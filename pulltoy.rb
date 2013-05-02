@@ -150,5 +150,5 @@ def build_merge_test_script
 end
 
 # Okay, go!
-# build_csv()
-build_merge_test_script
+build_csv()
+# build_merge_test_script
