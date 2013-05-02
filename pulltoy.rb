@@ -94,12 +94,6 @@ def build_csv_record(pr)
 	this_pr.to_csv
 end
 
-# Note this uses some git aliases of my own. Specifically:
-#
-# [alias]
-# wipe = reset --hard HEAD
-# remote-add-msf = !"git remote add -f $1 git://github.com/$1/metasploit-framework.git"
-# You'll want to add those or these tricks won't work.
 def build_merge_command(pr)
 	parse(pr)
 	doc = @pr_files[pr]
@@ -108,21 +102,21 @@ def build_merge_command(pr)
 	if source.include? ":"
 		repo,branch = source.split(":")
 	else
-		repo,branch = ["origin",source]
+		repo,branch = ["upstream",source]
 	end
 	cmd = []
-	if repo == "origin"
-	cmd << "git checkout -b #{branch} --track origin/#{branch}"
-	cmd << "git checkout master"
+	if repo == "upstream"
+	cmd << "git checkout -b #{branch} --track upstream/#{branch}"
+	cmd << "git checkout upstream-master"
 	cmd << "git merge --no-commit --no-ff #{branch}"
 	else
-	cmd << "git remote-add-msf #{repo}"
+	cmd << "git remote add -f #{repo} git://github.com/#{repo}/metasploit-framework.git"
 	cmd << "git fetch #{repo}"
 	cmd << "git checkout -b #{repo}-#{branch} --track #{repo}/#{branch}"
-	cmd << "git checkout master"
+	cmd << "git checkout upstream-master"
 	cmd << "git merge --no-commit --no-ff #{repo}-#{branch}"
 	end
-	cmd << "git wipe"
+	cmd << "git reset --hard HEAD"
 	cmd << "echo 'COMPLETED PR ##{pr} for #{repo}/#{branch}'"
 	cmd << "sleep 3"
 	cmd.join(";")
